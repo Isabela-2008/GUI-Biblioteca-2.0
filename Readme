@@ -1,0 +1,57 @@
+Enunciado
+Projeto: Sistema de Gestão de Biblioteca
+
+Descrição: O Sistema de Gestão de Biblioteca é uma aplicação desktop desenvolvida em Python que permite o gerenciamento de autores, livros e empréstimos. A aplicação utiliza SQLite como banco de dados para armazenar informações sobre os autores, títulos de livros e os empréstimos realizados. Os usuários podem adicionar, visualizar e excluir registros de autores, livros e empréstimos através de uma interface gráfica intuitiva construída com Tkinter.
+
+Funcionalidades:
+
+Adicionar, visualizar e excluir autores.
+Adicionar, visualizar e excluir livros.
+Registrar empréstimos de livros a usuários e visualizar os empréstimos realizados.
+Interface gráfica amigável para facilitar a interação do usuário.
+Tecnologias Utilizadas:
+
+Python
+Tkinter (para a interface gráfica)
+SQLite (para o banco de dados)
+Instruções de Uso:
+
+Execute o arquivo sistema_biblioteca.py.
+Utilize os campos de entrada para adicionar autores e livros.
+Registre empréstimos selecionando um livro e preenchendo os dados do usuário.
+Utilize os botões para visualizar listas de autores, livros e empréstimos.
+
+# Sistema de Gestão de Biblioteca
+
+## Descrição
+
+O Sistema de Gestão de Biblioteca é uma aplicação desktop desenvolvida em Python que permite gerenciar informações sobre autores, livros e empréstimos de forma eficiente. Utilizando Tkinter para a interface gráfica e SQLite para o banco de dados, o sistema proporciona uma experiência intuitiva para os usuários.
+
+## Funcionalidades
+
+- **Gerenciamento de Autores:**
+  - Adicionar novos autores.
+  - Visualizar a lista de autores cadastrados.
+  - Excluir autores existentes.
+
+- **Gerenciamento de Livros:**
+  - Adicionar novos livros.
+  - Visualizar a lista de livros cadastrados.
+  - Excluir livros existentes.
+
+- **Gerenciamento de Empréstimos:**
+  - Registrar empréstimos de livros.
+  - Visualizar a lista de empréstimos realizados.
+
+## Tecnologias Utilizadas
+
+- Python
+- Tkinter
+- SQLite
+
+## Instruções de Uso
+
+1. Clone este repositório:
+   ```bash
+   git clone https://github.com/seu_usuario/sistema_gestao_biblioteca.git
+   cd sistema_gestao_biblioteca
