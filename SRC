@@ -1,0 +1,259 @@
+import tkinter as tk  
+from tkinter import ttk, messagebox  
+import sqlite3  
+
+# Conexão com o banco de dados  
+def connect_db():  
+    conn = sqlite3.connect('banco_de_dados.db')  
+    cursor = conn.cursor()  
+    return conn, cursor  
+
+# Criação das tabelas  
+def create_tables():  
+    conn, cursor = connect_db()  
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS Autores (
+        autor_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        Nome TEXT NOT NULL
+    )
+    ''')  
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS Livros (
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        Titulo TEXT NOT NULL,
+        AutorID INTEGER,
+        FOREIGN KEY (AutorID) REFERENCES Autores(autor_id)
+    )
+    ''')  
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS Emprestimos (
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        LivroID INTEGER,
+        Usuario TEXT NOT NULL,
+        DataEmprestimo TEXT NOT NULL,
+        DataDevolucao TEXT,
+        FOREIGN KEY (LivroID) REFERENCES Livros(ID)
+    )
+    ''')  
+    conn.commit()  
+    conn.close()  
+
+# Adiciona um novo autor  
+def add_autor():  
+    nome_autor = entry_nome_autor.get()  
+    if not nome_autor:  
+        messagebox.showerror("Erro", "Por favor, insira o nome do autor.")  
+        return  
+    conn, cursor = connect_db()  
+    cursor.execute('INSERT INTO Autores (Nome) VALUES (?)', (nome_autor,))  
+    conn.commit()  
+    conn.close()  
+    messagebox.showinfo("Sucesso", "Autor adicionado com sucesso!")  
+    entry_nome_autor.delete(0, tk.END)  
+    view_autores()  
+
+# Exclui um autor  
+def delete_autor():  
+    selected_item = autores_list.selection()  
+    if not selected_item:  
+        messagebox.showerror('Erro', 'Selecione um autor para excluir!')  
+        return  
+    autor_id = autores_list.item(selected_item)['values'][0]  # ID do autor selecionado  
+
+    # Verificar se o autor tem livros associados  
+    conn, cursor = connect_db()  
+    cursor.execute('SELECT COUNT(*) FROM Livros WHERE AutorID = ?', (autor_id,))  
+    count = cursor.fetchone()[0]  
+    if count > 0:  
+        messagebox.showerror('Erro', 'Este autor não pode ser excluído porque possui livros associados.')  
+        conn.close()  
+        return  
+
+    cursor.execute('DELETE FROM Autores WHERE autor_id = ?', (autor_id,))  
+    conn.commit()  
+    conn.close()  
+    messagebox.showinfo('Sucesso', 'Autor excluído com sucesso!')  
+    view_autores()  
+
+# Visualiza os autores na lista  
+def view_autores():  
+    for item in autores_list.get_children():  
+        autores_list.delete(item)  
+    conn, cursor = connect_db()  
+    cursor.execute('SELECT autor_id, Nome FROM Autores')  
+    for row in cursor.fetchall():  
+        autores_list.insert('', tk.END, values=row)  
+    conn.close()  
+
+# Adiciona um novo livro  
+def add_livro():  
+    titulo = entry_titulo.get()  
+    autor_id = entry_autor_id.get()  
+    if not titulo or not autor_id:  
+        messagebox.showerror("Erro", "Por favor, insira o título e o ID do autor.")  
+        return  
+    conn, cursor = connect_db()  
+    cursor.execute('INSERT INTO Livros (Titulo, AutorID) VALUES (?, ?)', (titulo, autor_id))  
+    conn.commit()  
+    conn.close()  
+    messagebox.showinfo("Sucesso", "Livro adicionado com sucesso!")  
+    entry_titulo.delete(0, tk.END)  
+    entry_autor_id.delete(0, tk.END)  
+    view_livros()  
+
+# Visualiza os livros na lista  
+def view_livros():  
+    for item in livros_list.get_children():  
+        livros_list.delete(item)  
+    conn, cursor = connect_db()  
+    cursor.execute('SELECT Livros.ID, Livros.Titulo, Autores.Nome FROM Livros JOIN Autores ON Livros.AutorID = Autores.autor_id')  
+    for row in cursor.fetchall():  
+        livros_list.insert('', tk.END, values=row)  
+    conn.close()  
+
+# Adiciona um novo empréstimo  
+def add_emprestimo():  
+    livro_id = entry_livro_id.get()  
+    usuario = entry_nome_usuario.get()  
+    data_emprestimo = entry_data_emprestimo.get()  
+    if not livro_id or not usuario or not data_emprestimo:  
+        messagebox.showerror("Erro", "Por favor, preencha todos os campos.")  
+        return  
+    conn, cursor = connect_db()  
+    cursor.execute('INSERT INTO Emprestimos (LivroID, Usuario, DataEmprestimo) VALUES (?, ?, ?)', (livro_id, usuario, data_emprestimo))  
+    conn.commit()  
+    conn.close()  
+    messagebox.showinfo("Sucesso", "Empréstimo adicionado com sucesso!")  
+    entry_livro_id.delete(0, tk.END)  
+    entry_nome_usuario.delete(0, tk.END)  
+    entry_data_emprestimo.delete(0, tk.END)  
+    view_emprestimos()  
+
+# Visualiza os empréstimos na lista  
+def view_emprestimos():  
+    for item in emprestimos_list.get_children():  
+        emprestimos_list.delete(item)  
+    conn, cursor = connect_db()  
+    cursor.execute('SELECT Emprestimos.ID, Livros.Titulo, Emprestimos.Usuario, Emprestimos.DataEmprestimo FROM Emprestimos JOIN Livros ON Emprestimos.LivroID = Livros.ID')  
+    for row in cursor.fetchall():  
+        emprestimos_list.insert('', tk.END, values=row)  
+    conn.close()  
+
+# Configurações da interface  
+root = tk.Tk()  
+root.title("Sistema de Gestão de Livros")  
+root.configure(bg="#ADD8E6")  # Define a cor de fundo como azul claro
+
+# Criar tabelas antes de iniciar a interface
+create_tables()
+
+# Configurar o canvas e a scrollbar  
+canvas = tk.Canvas(root, bg="#ADD8E6")  # Define a cor de fundo do canvas
+scrollbar = tk.Scrollbar(root, orient="vertical", command=canvas.yview)  
+scrollable_frame = tk.Frame(canvas, bg="#ADD8E6")  # Define a cor de fundo do frame scrollable
+
+scrollable_frame.bind(  
+    "<Configure>",  
+    lambda e: canvas.configure(scrollregion=canvas.bbox("all"))  
+)  
+
+canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")  
+scrollbar.config(command=canvas.yview)  
+
+# Colocar a scrollbar e o canvas na tela  
+canvas.pack(side="left", fill="both", expand=True)  
+scrollbar.pack(side="right", fill="y")  
+
+# Aba de Autores  
+label_nome_autor = tk.Label(scrollable_frame, text="Nome do Autor:", bg="#ADD8E6")  
+label_nome_autor.grid(row=0, column=0, padx=5, pady=5)  
+entry_nome_autor = tk.Entry(scrollable_frame)  
+entry_nome_autor.grid(row=0, column=1, padx=5, pady=5)  
+
+# Botão para adicionar autor  
+btn_add_autor = tk.Button(scrollable_frame, text="Adicionar Autor", command=add_autor)  
+btn_add_autor.grid(row=1, column=1, padx=5, pady=5)  
+
+# Botão para excluir autor  
+btn_delete_autor = tk.Button(scrollable_frame, text="Excluir Autor", command=delete_autor)  
+btn_delete_autor.grid(row=2, column=1, padx=5, pady=5)  
+
+# Botão para visualizar autores  
+btn_view_autores = tk.Button(scrollable_frame, text="Visualizar Autores", command=view_autores)  
+btn_view_autores.grid(row=3, column=1, padx=5, pady=5)  
+
+# Lista de autores  
+autores_list = ttk.Treeview(scrollable_frame, columns=('ID', 'Nome'), show='headings')  
+autores_list.heading('ID', text='ID')  
+autores_list.heading('Nome', text='Nome')  
+autores_list.column('ID', width=50)   # Largura da coluna ID  
+autores_list.column('Nome', width=200) # Largura da coluna Nome  
+autores_list.grid(row=4, column=0, columnspan=2, padx=5, pady=5)  
+
+# Aba de Livros  
+label_titulo = tk.Label(scrollable_frame, text="Título do Livro:", bg="#ADD8E6")  
+label_titulo.grid(row=5, column=0, padx=5, pady=5)  
+entry_titulo = tk.Entry(scrollable_frame)  
+entry_titulo.grid(row=5, column=1, padx=5, pady=5)  
+
+label_autor_id = tk.Label(scrollable_frame, text="ID do Autor:", bg="#ADD8E6")  
+label_autor_id.grid(row=6, column=0, padx=5, pady=5)  
+entry_autor_id = tk.Entry(scrollable_frame)  
+entry_autor_id.grid(row=6, column=1, padx=5, pady=5)  
+
+# Botão para adicionar livro  
+btn_add_livro = tk.Button(scrollable_frame, text="Adicionar Livro", command=add_livro)  
+btn_add_livro.grid(row=7, column=1, padx=5, pady=5)  
+
+# Botão para visualizar livros  
+btn_view_livros = tk.Button(scrollable_frame, text="Visualizar Livros", command=view_livros)  
+btn_view_livros.grid(row=8, column=1, padx=5, pady=5)  
+
+# Lista de livros  
+livros_list = ttk.Treeview(scrollable_frame, columns=('ID', 'Título', 'Autor'), show='headings')  
+livros_list.heading('ID', text='ID')  
+livros_list.heading('Título', text='Título')  
+livros_list.heading('Autor', text='Autor')  
+livros_list.column('ID', width=50)   # Largura da coluna ID  
+livros_list.column('Título', width=200)  # Largura da coluna Título  
+livros_list.column('Autor', width=150)   # Largura da coluna Autor  
+livros_list.grid(row=9, column=0, columnspan=2, padx=5, pady=5)  
+
+# Aba de Empréstimos  
+label_livro_id = tk.Label(scrollable_frame, text="ID do Livro:", bg="#ADD8E6")  
+label_livro_id.grid(row=10, column=0, padx=5, pady=5)  
+entry_livro_id = tk.Entry(scrollable_frame)  
+entry_livro_id.grid(row=10, column=1, padx=5, pady=5)  
+
+label_nome_usuario = tk.Label(scrollable_frame, text="Nome do Usuário:", bg="#ADD8E6")  
+label_nome_usuario.grid(row=11, column=0, padx=5, pady=5)  
+entry_nome_usuario = tk.Entry(scrollable_frame)  
+entry_nome_usuario.grid(row=11, column=1, padx=5, pady=5)  
+
+label_data_emprestimo = tk.Label(scrollable_frame, text="Data do Empréstimo:", bg="#ADD8E6")  
+label_data_emprestimo.grid(row=12, column=0, padx=5, pady=5)  
+entry_data_emprestimo = tk.Entry(scrollable_frame)  
+entry_data_emprestimo.grid(row=12, column=1, padx=5, pady=5)  
+
+# Botão para adicionar empréstimo  
+btn_add_emprestimo = tk.Button(scrollable_frame, text="Adicionar Empréstimo", command=add_emprestimo)  
+btn_add_emprestimo.grid(row=13, column=1, padx=5, pady=5)  
+
+# Botão para visualizar empréstimos  
+btn_view_emprestimos = tk.Button(scrollable_frame, text="Visualizar Empréstimos", command=view_emprestimos)  
+btn_view_emprestimos.grid(row=14, column=1, padx=5, pady=5)  
+
+# Lista de empréstimos  
+emprestimos_list = ttk.Treeview(scrollable_frame, columns=('ID', 'Título', 'Usuário', 'Data de Empréstimo'), show='headings')  
+emprestimos_list.heading('ID', text='ID')  
+emprestimos_list.heading('Título', text='Título')  
+emprestimos_list.heading('Usuário', text='Usuário')  
+emprestimos_list.heading('Data de Empréstimo', text='Data de Empréstimo')  
+emprestimos_list.column('ID', width=50)  
+emprestimos_list.column('Título', width=200)  
+emprestimos_list.column('Usuário', width=150)  
+emprestimos_list.column('Data de Empréstimo', width=150)  
+emprestimos_list.grid(row=15, column=0, columnspan=2, padx=5, pady=5)  
+
+# Inicia a interface  
+root.mainloop()  
